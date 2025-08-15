@@ -22,6 +22,14 @@ type FileObject = {
 export function Uploader() {
   const [files, setFiles] = useState<Array<FileObject>>([]);
 
+  const fileError = (file: File) => {
+    setFiles((prevFiles) =>
+      prevFiles.map((f) =>
+        f.file === file ? { ...f, uploading: false, error: true } : f
+      )
+    );
+  };
+
   const onDrop = useCallback((acceptedFiles: File[]) => {
     if (acceptedFiles.length > 0) {
       setFiles((prevFiles) => [
@@ -102,11 +110,7 @@ export function Uploader() {
 
       if (!presignedUrlRes.ok) {
         toast.error("Failed to get presigned URL");
-        setFiles((prevFiles) =>
-          prevFiles.map((f) =>
-            f.file === file ? { ...f, uploading: false, error: true } : f
-          )
-        );
+        fileError(file);
         return;
       }
 
@@ -123,6 +127,7 @@ export function Uploader() {
 
       if (!uploadRes.ok) {
         toast.error("Upload failed");
+        fileError(file);
         return;
       }
 
@@ -135,11 +140,7 @@ export function Uploader() {
       toast.success("File uploaded successfully");
     } catch (error) {
       console.error(error);
-      setFiles((prevFiles) =>
-        prevFiles.map((f) =>
-          f.file === file ? { ...f, uploading: false, error: true } : f
-        )
-      );
+      fileError(file);
       toast.error("File upload failed");
     }
   }
@@ -171,8 +172,17 @@ export function Uploader() {
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 mt-6">
         {files.map((file) => (
           <div key={file.id}>
-            <p>{file.file.name}</p>
-            <p>{file.progress}%</p>
+            <p className={`${file.error ? "line-through" : ""}`}>
+              {file.file.name}
+            </p>
+
+            {file.error ? (
+              <p className="text-red-500/50">
+                An error occured when trying to upload your file
+              </p>
+            ) : (
+              <p>{file.progress}%</p>
+            )}
           </div>
         ))}
       </div>
