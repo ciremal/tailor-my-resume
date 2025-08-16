@@ -11,6 +11,7 @@ const uploadRequestSchema = z.object({
   size: z.number(),
 });
 
+// Need to update this to save to a database
 export async function POST(request: Request) {
   try {
     const body = await request.json();

@@ -7,7 +7,7 @@ import { FileRejection, useDropzone } from "react-dropzone";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
-import { Loader2, Trash2 } from "lucide-react";
+import { Download, Loader2, Trash2 } from "lucide-react";
 
 type FileObject = {
   id: string; // unique id
@@ -89,52 +89,6 @@ export function Uploader() {
     },
   });
 
-  async function deleteFile(fileId: string) {
-    try {
-      const fileToRemove = files.find((f) => f.id === fileId);
-
-      if (fileToRemove) {
-        if (fileToRemove.objectUrl) {
-          URL.revokeObjectURL(fileToRemove.objectUrl);
-        }
-      }
-
-      setFiles((prevFiles) =>
-        prevFiles.map((f) => (f.id === fileId ? { ...f, isDeleting: true } : f))
-      );
-
-      const deleteFileResponse = await fetch("/api/s3/delete", {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          key: fileToRemove?.key,
-        }),
-      });
-
-      if (!deleteFileResponse.ok) {
-        toast.error("Failed to delete file");
-        setFiles((prevFiles) =>
-          prevFiles.map((f) =>
-            f.id === fileId ? { ...f, isDeleting: false, error: true } : f
-          )
-        );
-        return;
-      }
-
-      setFiles((prevFiles) => prevFiles.filter((f) => f.id !== fileId));
-      toast.success("File successfully deleted");
-    } catch (error) {
-      toast.error("Failed to delete file");
-      setFiles((prevFiles) =>
-        prevFiles.map((f) =>
-          f.id === fileId ? { ...f, isDeleting: false, error: true } : f
-        )
-      );
-    }
-  }
-
   async function uploadFile(file: File) {
     // Mark file as uploading
     setFiles((prevFiles) =>
@@ -192,9 +146,77 @@ export function Uploader() {
     }
   }
 
+  async function deleteFile(fileId: string) {
+    try {
+      const fileToRemove = files.find((f) => f.id === fileId);
+
+      if (fileToRemove) {
+        if (fileToRemove.objectUrl) {
+          URL.revokeObjectURL(fileToRemove.objectUrl);
+        }
+      }
+
+      setFiles((prevFiles) =>
+        prevFiles.map((f) => (f.id === fileId ? { ...f, isDeleting: true } : f))
+      );
+
+      const deleteFileResponse = await fetch("/api/s3/delete", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          key: fileToRemove?.key,
+        }),
+      });
+
+      if (!deleteFileResponse.ok) {
+        toast.error("Failed to delete file");
+        setFiles((prevFiles) =>
+          prevFiles.map((f) =>
+            f.id === fileId ? { ...f, isDeleting: false, error: true } : f
+          )
+        );
+        return;
+      }
+
+      setFiles((prevFiles) => prevFiles.filter((f) => f.id !== fileId));
+      toast.success("File successfully deleted");
+    } catch (error) {
+      toast.error("Failed to delete file");
+      setFiles((prevFiles) =>
+        prevFiles.map((f) =>
+          f.id === fileId ? { ...f, isDeleting: false, error: true } : f
+        )
+      );
+    }
+  }
+
+  async function downloadFile(fileKey: string) {
+    try {
+      const response = await fetch(
+        `/api/s3/download-file?key=${encodeURIComponent(fileKey)}`,
+        {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+
+      if (!response.ok) {
+        toast.error("Could not download resume right now.");
+        return;
+      }
+
+      const { url } = await response.json();
+      window.open(url, "_blank");
+    } catch (error) {
+      console.error(error);
+      toast.error("Could not download resume right now.");
+    }
+  }
+
   return (
     <>
-      {console.log(files)}
       <Card
         {...getRootProps()}
         className={cn(
@@ -231,18 +253,32 @@ export function Uploader() {
             ) : (
               <p>{file.progress}%</p>
             )}
-            <Button
-              size={"icon"}
-              onClick={() => deleteFile(file.id)}
-              className="hover:cursor-pointer hover:bg-primary/70"
-              disabled={file.uploading || file.isDeleting}
-            >
-              {file.isDeleting ? (
-                <Loader2 className="animate-spin" />
-              ) : (
-                <Trash2 />
-              )}
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                size={"icon"}
+                onClick={() => deleteFile(file.id)}
+                className="hover:cursor-pointer hover:bg-primary/70"
+                disabled={file.uploading || file.isDeleting}
+              >
+                {file.isDeleting ? (
+                  <Loader2 className="animate-spin" />
+                ) : (
+                  <Trash2 />
+                )}
+              </Button>
+              <Button
+                size={"icon"}
+                onClick={() => file.key && downloadFile(file.key)}
+                className="hover:cursor-pointer hover:bg-primary/70"
+                disabled={file.uploading || file.isDeleting || !file.key}
+              >
+                {file.isDeleting ? (
+                  <Loader2 className="animate-spin" />
+                ) : (
+                  <Download />
+                )}
+              </Button>
+            </div>
           </div>
         ))}
       </div>
