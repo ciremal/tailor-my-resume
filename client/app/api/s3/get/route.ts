@@ -12,6 +12,7 @@ export async function GET() {
     const response = await S3.send(command);
     const files = (response.Contents || []).map((file) => ({
       key: file.Key,
+      fileName: file.Key?.split("/")[1],
       lastModified: file.LastModified,
       size: file.Size,
       etag: file.ETag,

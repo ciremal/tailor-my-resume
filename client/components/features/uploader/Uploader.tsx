@@ -1,27 +1,58 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Card, CardContent } from "../ui/card";
-import { Button } from "../ui/button";
+import { Card, CardContent } from "../../ui/card";
+import { Button } from "../../ui/button";
 import { FileRejection, useDropzone } from "react-dropzone";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 import { Download, Loader2, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogPortal,
+  AlertDialogOverlay,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
 
 type FileObject = {
   id: string; // unique id
-  file: File; // the file itself
+  file?: File; // the file itself
+  name: string;
   uploading: boolean; // is the file currently uploading
   progress: number; // upload progress in percentage
   key?: string; // key of the file in the storage
   isDeleting: boolean; // is the file currently being deleted
   error: boolean; // has the file upload failed
-  objectUrl?: string; // the object url of the file
 };
 
 export function Uploader() {
   const [files, setFiles] = useState<Array<FileObject>>([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const files = await getAllFiles();
+      setFiles(
+        files.map((file: any) => ({
+          id: uuidv4(),
+          name: file.fileName,
+          key: file.key,
+          uploading: false,
+          progress: 100,
+          isDeleting: false,
+          error: false,
+        }))
+      );
+    };
+    fetchData();
+  }, []);
 
   const fileError = (file: File) => {
     setFiles((prevFiles) =>
@@ -38,11 +69,11 @@ export function Uploader() {
         ...acceptedFiles.map((file) => ({
           id: uuidv4(),
           file,
+          name: file.name,
           uploading: false,
           progress: 0,
           isDeleting: false,
           error: false,
-          objectUrl: URL.createObjectURL(file),
         })),
       ]);
     }
@@ -150,12 +181,6 @@ export function Uploader() {
     try {
       const fileToRemove = files.find((f) => f.id === fileId);
 
-      if (fileToRemove) {
-        if (fileToRemove.objectUrl) {
-          URL.revokeObjectURL(fileToRemove.objectUrl);
-        }
-      }
-
       setFiles((prevFiles) =>
         prevFiles.map((f) => (f.id === fileId ? { ...f, isDeleting: true } : f))
       );
@@ -215,6 +240,26 @@ export function Uploader() {
     }
   }
 
+  async function getAllFiles() {
+    try {
+      const response = await fetch("/api/s3/get", {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (!response.ok) {
+        toast.error("Error occured in fetching resumes");
+        return;
+      }
+
+      const files = await response.json();
+      return files;
+    } catch (error) {
+      console.error(error);
+      toast.error("Error occured in fetching resumes");
+    }
+  }
+
   return (
     <>
       <Card
@@ -243,7 +288,7 @@ export function Uploader() {
         {files.map((file) => (
           <div key={file.id}>
             <p className={`${file.error ? "line-through" : ""} truncate`}>
-              {file.file.name}
+              {file.name}
             </p>
 
             {file.error ? (
@@ -254,29 +299,45 @@ export function Uploader() {
               <p>{file.progress}%</p>
             )}
             <div className="flex gap-2">
-              <Button
-                size={"icon"}
-                onClick={() => deleteFile(file.id)}
-                className="hover:cursor-pointer hover:bg-primary/70"
-                disabled={file.uploading || file.isDeleting}
-              >
-                {file.isDeleting ? (
-                  <Loader2 className="animate-spin" />
-                ) : (
-                  <Trash2 />
-                )}
-              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    size={"icon"}
+                    className="hover:cursor-pointer hover:bg-primary/70"
+                    disabled={file.uploading || file.isDeleting}
+                  >
+                    {file.isDeleting ? (
+                      <Loader2 className="animate-spin" />
+                    ) : (
+                      <Trash2 />
+                    )}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>
+                      Are you absolutely sure?
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                      {`This action cannot be undone. This will permanently delete
+                      ${file.name} and it's data.`}
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => deleteFile(file.id)}>
+                      Continue
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
               <Button
                 size={"icon"}
                 onClick={() => file.key && downloadFile(file.key)}
                 className="hover:cursor-pointer hover:bg-primary/70"
                 disabled={file.uploading || file.isDeleting || !file.key}
               >
-                {file.isDeleting ? (
-                  <Loader2 className="animate-spin" />
-                ) : (
-                  <Download />
-                )}
+                <Download />
               </Button>
             </div>
           </div>
