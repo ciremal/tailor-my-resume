@@ -137,26 +137,23 @@ export function Uploader() {
     );
 
     try {
-      // request presigned url
-      const presignedUrlRes = await fetch("/api/s3/upload", {
+      const res = await fetch("http://localhost:4000/api/resumes/", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          fileName: file.name,
-          contentType: file.type,
+          name: file.name,
           size: file.size,
+          contentType: file.type,
         }),
       });
 
-      if (!presignedUrlRes.ok) {
-        toast.error("Failed to get presigned URL");
+      if (!res.ok) {
+        toast.error("Upload failed. Please try again.");
         fileError(file);
         return;
       }
 
-      const { presignedUrl, key } = await presignedUrlRes.json();
+      const { uploadedResume, presignedUrl } = await res.json();
 
       // Upload file to S3 using presigned URL
       const uploadRes = await fetch(presignedUrl, {
@@ -168,14 +165,16 @@ export function Uploader() {
       });
 
       if (!uploadRes.ok) {
-        toast.error("Upload failed");
+        toast.error("Upload failed. Please try again.");
         fileError(file);
         return;
       }
 
       setFiles((prevFiles) =>
         prevFiles.map((f) =>
-          f.file === file ? { ...f, uploading: false, progress: 100, key } : f
+          f.file === file
+            ? { ...f, uploading: false, progress: 100, key: uploadedResume.key }
+            : f
         )
       );
 
