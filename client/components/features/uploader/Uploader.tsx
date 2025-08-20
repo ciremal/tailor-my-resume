@@ -7,11 +7,9 @@ import { FileRejection, useDropzone } from "react-dropzone";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
-import { Download, Loader2, Trash2 } from "lucide-react";
+import { Download, Edit, Loader2, Trash2 } from "lucide-react";
 import {
   AlertDialog,
-  AlertDialogPortal,
-  AlertDialogOverlay,
   AlertDialogTrigger,
   AlertDialogContent,
   AlertDialogHeader,
@@ -21,6 +19,18 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 type FileObject = {
   id: string; // unique id
@@ -260,6 +270,10 @@ export function Uploader() {
     }
   }
 
+  async function editFile(fileKey: string) {
+    console.log(fileKey);
+  }
+
   return (
     <>
       <Card
@@ -339,6 +353,46 @@ export function Uploader() {
               >
                 <Download />
               </Button>
+
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button
+                    size="icon"
+                    className="hover:cursor-pointer hover:bg-primary/70"
+                    disabled={file.uploading || file.isDeleting || !file.key}
+                  >
+                    <Edit />
+                  </Button>
+                </DialogTrigger>
+
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Edit File Name</DialogTitle>
+                    <DialogDescription>
+                      Make changes to your file name here.
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      if (file.key) editFile(file.key);
+                    }}
+                  >
+                    <div className="flex flex-col gap-2">
+                      <Label>File Name</Label>
+                      <Input placeholder={file.name} />
+                    </div>
+
+                    <DialogFooter className="mt-4">
+                      <DialogClose asChild>
+                        <Button variant="outline">Cancel</Button>
+                      </DialogClose>
+                      <Button type="submit">Save changes</Button>
+                    </DialogFooter>
+                  </form>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
         ))}

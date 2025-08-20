@@ -2,7 +2,6 @@ import { S3 } from "@/lib/s3Client";
 import { ListObjectsV2Command } from "@aws-sdk/client-s3";
 import { NextResponse } from "next/server";
 
-// Need to rewrite this to fetch from a database
 export async function GET() {
   try {
     const command = new ListObjectsV2Command({
