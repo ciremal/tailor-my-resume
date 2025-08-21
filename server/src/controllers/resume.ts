@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import prisma from "../db/client";
-import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { DeleteObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { S3 } from "../lib/s3Client";
 
@@ -53,10 +53,53 @@ export const uploadResume = async (req: Request, res: Response) => {
 
 export const deleteResume = async (req: Request, res: Response) => {
   try {
-    const { id } = req.body;
+    const { id } = req.params;
+    const { key } = req.body;
+
+    if (!key) {
+      res.status(400).json({ error: "Key is required" });
+    }
+    if (!id) {
+      res.status(400).json({ error: "Id is required" });
+    }
+
+    const command = new DeleteObjectCommand({
+      Bucket: process.env.S3_BUCKET_NAME,
+      Key: key,
+    });
+
+    await S3.send(command);
+
     const result = await prisma.resume.delete({
       where: {
+        id: id!,
+      },
+    });
+
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(500).json({ error: error });
+  }
+};
+
+export const updateResumeName = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { newName } = req.body;
+
+    if (!newName) {
+      return res.status(400).json({ error: "New name is required" });
+    }
+    if (!id) {
+      return res.status(400).json({ error: "Id is required" });
+    }
+
+    const result = await prisma.resume.update({
+      where: {
         id: id,
+      },
+      data: {
+        name: newName,
       },
     });
 

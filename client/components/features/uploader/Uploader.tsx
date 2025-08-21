@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { Card, CardContent } from "../../ui/card";
 import { Button } from "../../ui/button";
 import { FileRejection, useDropzone } from "react-dropzone";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 import { Download, Edit, Loader2, Trash2 } from "lucide-react";
@@ -45,14 +45,16 @@ type FileObject = {
 
 export function Uploader() {
   const [files, setFiles] = useState<Array<FileObject>>([]);
+  const [openEditDialog, setOpenEditDialog] = useState(false);
+  const inputNewNameRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       const files = await getAllFiles();
       setFiles(
         files.map((file: any) => ({
-          id: uuidv4(),
-          name: file.fileName,
+          id: file.id,
+          name: file.name,
           key: file.key,
           uploading: false,
           progress: 100,
@@ -92,7 +94,6 @@ export function Uploader() {
   }, []);
 
   const rejectedFiles = useCallback((fileRejection: FileRejection[]) => {
-    console.log(fileRejection);
     if (fileRejection.length) {
       const toomanyFiles = fileRejection.find(
         (rejection) => rejection.errors[0].code === "too-many-files"
@@ -173,7 +174,13 @@ export function Uploader() {
       setFiles((prevFiles) =>
         prevFiles.map((f) =>
           f.file === file
-            ? { ...f, uploading: false, progress: 100, key: uploadedResume.key }
+            ? {
+                ...f,
+                uploading: false,
+                progress: 100,
+                key: uploadedResume.key,
+                id: uploadedResume.id,
+              }
             : f
         )
       );
@@ -189,23 +196,30 @@ export function Uploader() {
   async function deleteFile(fileId: string) {
     try {
       const fileToRemove = files.find((f) => f.id === fileId);
+      if (!fileToRemove) {
+        toast.error("This file cannot be found/already deleted.");
+        return;
+      }
 
       setFiles((prevFiles) =>
         prevFiles.map((f) => (f.id === fileId ? { ...f, isDeleting: true } : f))
       );
 
-      const deleteFileResponse = await fetch("/api/s3/delete", {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          key: fileToRemove?.key,
-        }),
-      });
+      const response = await fetch(
+        `http://localhost:4000/api/resumes/${fileId}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            key: fileToRemove?.key,
+          }),
+        }
+      );
 
-      if (!deleteFileResponse.ok) {
-        toast.error("Failed to delete file");
+      if (!response.ok) {
+        toast.error("Failed to delete file.");
         setFiles((prevFiles) =>
           prevFiles.map((f) =>
             f.id === fileId ? { ...f, isDeleting: false, error: true } : f
@@ -217,7 +231,7 @@ export function Uploader() {
       setFiles((prevFiles) => prevFiles.filter((f) => f.id !== fileId));
       toast.success("File successfully deleted");
     } catch (error) {
-      toast.error("Failed to delete file");
+      toast.error("Failed to delete file.");
       setFiles((prevFiles) =>
         prevFiles.map((f) =>
           f.id === fileId ? { ...f, isDeleting: false, error: true } : f
@@ -251,7 +265,7 @@ export function Uploader() {
 
   async function getAllFiles() {
     try {
-      const response = await fetch("/api/s3/get", {
+      const response = await fetch("http://localhost:4000/api/resumes/", {
         method: "GET",
         headers: { "Content-Type": "application/json" },
       });
@@ -269,8 +283,32 @@ export function Uploader() {
     }
   }
 
-  async function editFile(fileKey: string) {
-    console.log(fileKey);
+  async function editFile(fileId: string, newName: string) {
+    try {
+      const response = await fetch(
+        `http://localhost:4000/api/resumes/${fileId}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            newName,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        toast.error("An error occured updating the file name.");
+        return;
+      }
+
+      setFiles((prevFiles) =>
+        prevFiles.map((f) => (f.id === fileId ? { ...f, name: newName } : f))
+      );
+      setOpenEditDialog(false);
+      toast.success("Successfully updated file name.");
+    } catch (error) {
+      toast.error("Something went wrong. Please try again.");
+    }
   }
 
   return (
@@ -304,12 +342,10 @@ export function Uploader() {
               {file.name}
             </p>
 
-            {file.error ? (
+            {file.error && (
               <p className="text-red-500/50">
                 An error occured when trying to upload your file
               </p>
-            ) : (
-              <p>{file.progress}%</p>
             )}
             <div className="flex gap-2">
               <AlertDialog>
@@ -353,7 +389,7 @@ export function Uploader() {
                 <Download />
               </Button>
 
-              <Dialog>
+              <Dialog open={openEditDialog} onOpenChange={setOpenEditDialog}>
                 <DialogTrigger asChild>
                   <Button
                     size="icon"
@@ -375,12 +411,15 @@ export function Uploader() {
                   <form
                     onSubmit={(e) => {
                       e.preventDefault();
-                      if (file.key) editFile(file.key);
+                      const newName = inputNewNameRef.current?.value;
+                      if (newName) {
+                        editFile(file.id, newName);
+                      }
                     }}
                   >
                     <div className="flex flex-col gap-2">
                       <Label>File Name</Label>
-                      <Input placeholder={file.name} />
+                      <Input ref={inputNewNameRef} placeholder={file.name} />
                     </div>
 
                     <DialogFooter className="mt-4">
