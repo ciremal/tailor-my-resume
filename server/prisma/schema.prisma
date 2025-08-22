@@ -18,7 +18,8 @@ model Resume {
   key         String   @unique @default(uuid())
   name        String
   size        Int
-  contentType String
+  contentType String   @default("")
+  pdfAsText   String   @default("")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }

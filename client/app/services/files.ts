@@ -1,6 +1,6 @@
 const API_BASE = "http://localhost:4000/api/resumes";
 
-export async function createFileMetadata(file: File) {
+export async function createFileMetadata(file: File, pdfAsText: string) {
   const res = await fetch(`${API_BASE}/`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -8,6 +8,7 @@ export async function createFileMetadata(file: File) {
       name: file.name,
       size: file.size,
       contentType: file.type,
+      pdfAsText: pdfAsText.trim(),
     }),
   });
   if (!res.ok) throw new Error("Failed to create file metadata");

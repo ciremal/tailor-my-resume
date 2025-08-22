@@ -15,7 +15,7 @@ export const getAllResumes = async (_req: Request, res: Response) => {
 
 export const uploadResume = async (req: Request, res: Response) => {
   try {
-    const { name, size, contentType } = req.body;
+    const { name, size, contentType, pdfAsText } = req.body;
 
     // Upload to database
     const uploadedResume = await prisma.resume.create({
@@ -23,6 +23,7 @@ export const uploadResume = async (req: Request, res: Response) => {
         name,
         size,
         contentType,
+        pdfAsText,
       },
     });
 

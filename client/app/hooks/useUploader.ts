@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { createFileMetadata, uploadToS3 } from "../services/files";
 import { toast } from "sonner";
+import pdfToText from "react-pdftotext";
 
 export type FileObject = {
   id: string;
@@ -50,7 +51,11 @@ export function useUploader() {
         )
       );
 
-      const { uploadedResume, presignedUrl } = await createFileMetadata(file);
+      const resumeAsText = await pdfToText(file);
+      const { uploadedResume, presignedUrl } = await createFileMetadata(
+        file,
+        resumeAsText
+      );
       await uploadToS3(presignedUrl, file);
 
       setFiles((prevFiles) =>
