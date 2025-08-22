@@ -1,15 +1,14 @@
 "use client";
 
-import { Button } from "../../ui/button";
 import { useEffect } from "react";
 import { toast } from "sonner";
-import { Download } from "lucide-react";
-import { fetchFiles } from "@/app/services/files";
+import { downloadResume, fetchFiles } from "@/app/services/files";
 import { useUploader } from "@/app/hooks/useUploader";
 import { UploaderDropZone } from "./UploaderDropZone";
 import { DeleteFileButton } from "./DeleteFileButton";
 import { EditFileButton } from "./EditFileButton";
 import { Spinner } from "@/components/ui/spinner";
+import { DownloadFileButton } from "./DownloadFileButton";
 
 export function Uploader() {
   const { files, setFiles, onDrop } = useUploader();
@@ -37,29 +36,6 @@ export function Uploader() {
     fetchData();
   }, []);
 
-  async function downloadFile(fileKey: string) {
-    try {
-      const response = await fetch(
-        `/api/s3/download-file?key=${encodeURIComponent(fileKey)}`,
-        {
-          method: "GET",
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-
-      if (!response.ok) {
-        toast.error("Could not download resume right now.");
-        return;
-      }
-
-      const { url } = await response.json();
-      window.open(url, "_blank");
-    } catch (error) {
-      console.error(error);
-      toast.error("Could not download resume right now.");
-    }
-  }
-
   return (
     <>
       <UploaderDropZone onDrop={onDrop} />
@@ -86,14 +62,7 @@ export function Uploader() {
               </p>
             )}
             <div className="flex gap-2">
-              <Button
-                size={"icon"}
-                onClick={() => file.key && downloadFile(file.key)}
-                className="hover:cursor-pointer hover:bg-primary/70"
-                disabled={file.uploading || file.isDeleting || !file.key}
-              >
-                <Download />
-              </Button>
+              <DownloadFileButton file={file} />
 
               <EditFileButton file={file} setFiles={setFiles} />
 

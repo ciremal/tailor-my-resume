@@ -47,3 +47,12 @@ export async function renameFile(id: string, newName: string) {
   });
   if (!res.ok) throw new Error("Failed to rename file");
 }
+
+export async function downloadResume(key: string) {
+  const res = await fetch(`${API_BASE}/download/${encodeURIComponent(key)}`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+  if (!res.ok) throw new Error("Failed to get download link");
+  return res.json();
+}

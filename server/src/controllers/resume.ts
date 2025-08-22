@@ -1,6 +1,10 @@
 import { Request, Response } from "express";
 import prisma from "../db/client";
-import { DeleteObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
+import {
+  DeleteObjectCommand,
+  GetObjectCommand,
+  PutObjectCommand,
+} from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { S3 } from "../lib/s3Client";
 
@@ -107,5 +111,24 @@ export const updateResumeName = async (req: Request, res: Response) => {
     res.status(200).json(result);
   } catch (error) {
     res.status(500).json({ error: error });
+  }
+};
+
+export const downloadResume = async (req: Request, res: Response) => {
+  try {
+    const key = decodeURIComponent(req.params.key as string);
+
+    const command = new GetObjectCommand({
+      Bucket: process.env.S3_BUCKET_NAME!,
+      Key: key,
+    });
+
+    const presignedUrl = await getSignedUrl(S3, command, {
+      expiresIn: 300,
+    });
+
+    res.status(200).json({ url: presignedUrl });
+  } catch (error) {
+    res.status(500).json(error);
   }
 };
