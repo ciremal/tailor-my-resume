@@ -24,17 +24,23 @@ interface EditFileButtonProps {
 
 export const EditFileButton = ({ file, setFiles }: EditFileButtonProps) => {
   const [openEditDialog, setOpenEditDialog] = useState(false);
-  const inputNewNameRef = useRef<HTMLInputElement>(null);
+  const [inputValue, setInputValue] = useState<string>("");
 
-  async function handleEditFileSave(fileId: string, newName: string) {
+  async function handleEditFileSave(
+    e: React.FormEvent<HTMLFormElement>
+  ): Promise<void> {
+    e.preventDefault();
     try {
-      await renameFile(fileId, newName);
-      setFiles((prevFiles) =>
-        prevFiles.map((f) => (f.id === fileId ? { ...f, name: newName } : f))
+      const fileId: string = file.id;
+      await renameFile(fileId, inputValue);
+      setFiles((prevFiles: FileObject[]) =>
+        prevFiles.map((f: FileObject) =>
+          f.id === fileId ? { ...f, name: inputValue } : f
+        )
       );
       setOpenEditDialog(false);
       toast.success("Successfully updated file name.");
-    } catch (error) {
+    } catch (error: unknown) {
       console.error(error);
       toast.error("An error occured updating the file name.");
     }
@@ -60,18 +66,13 @@ export const EditFileButton = ({ file, setFiles }: EditFileButtonProps) => {
           </DialogDescription>
         </DialogHeader>
 
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            const newName = inputNewNameRef.current?.value;
-            if (newName) {
-              handleEditFileSave(file.id, newName);
-            }
-          }}
-        >
+        <form onSubmit={handleEditFileSave}>
           <div className="flex flex-col gap-2">
             <Label>File Name</Label>
-            <Input ref={inputNewNameRef} placeholder={file.name} />
+            <Input
+              placeholder={file.name}
+              onChange={(e) => setInputValue(e.target.value)}
+            />
           </div>
 
           <DialogFooter className="mt-4">

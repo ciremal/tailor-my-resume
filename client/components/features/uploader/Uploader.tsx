@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { toast } from "sonner";
-import { downloadResume, fetchFiles } from "@/app/services/files";
+import { fetchFiles } from "@/app/services/files";
 import { useUploader } from "@/app/hooks/useUploader";
 import { UploaderDropZone } from "./UploaderDropZone";
 import { DeleteFileButton } from "./DeleteFileButton";
@@ -37,7 +37,7 @@ export function Uploader() {
   }, []);
 
   return (
-    <>
+    <div>
       <UploaderDropZone onDrop={onDrop} />
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 mt-6">
@@ -71,6 +71,6 @@ export function Uploader() {
           </div>
         ))}
       </div>
-    </>
+    </div>
   );
 }

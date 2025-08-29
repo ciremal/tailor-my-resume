@@ -51,7 +51,8 @@ export function useUploader() {
         )
       );
 
-      const resumeAsText = await pdfToText(file);
+      // const resumeAsText = await pdfToText(file);
+      const resumeAsText = "";
       const { uploadedResume, presignedUrl } = await createFileMetadata(
         file,
         resumeAsText
