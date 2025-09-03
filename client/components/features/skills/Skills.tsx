@@ -3,33 +3,51 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Skill } from "@/lib/types";
 import { X } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { addSkill, fetchSkills } from "@/app/services/skills";
 
 const Skills = () => {
-  const [skills, setSkills] = useState<string[]>([
-    "Python",
-    "JavaScript",
-    "Node",
-  ]);
+  const [skills, setSkills] = useState<Skill[]>([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const data = await fetchSkills();
+        setSkills(data);
+      } catch (error) {
+        console.error(error);
+        toast.error("Failed to fetch skills");
+      }
+    };
+    fetchData();
+  }, []);
 
   const [input, setInput] = useState("");
 
-  const addSkill = () => {
-    if (!input) {
-      return;
-    }
+  const handleAddSkill = async () => {
+    try {
+      if (!input) {
+        return;
+      }
 
-    const skill = skills.find((s) => s.toLowerCase() === input.toLowerCase());
-    if (!skill) {
-      setSkills((prev) => [...prev, input]);
+      const skill = skills.find(
+        (s) => s.name.toLowerCase() === input.toLowerCase()
+      );
+      if (!skill) {
+        const newSkill = await addSkill(input);
+        setSkills((prev) => [...prev, newSkill]);
+        setInput("");
+      }
+    } catch (error) {
+      toast.error("Something went wrong. Please try again later");
+      console.error(error);
     }
-    setInput("");
   };
 
-  const handleRemoveSkill = (skill: string) => {
-    setSkills((prev) => prev.filter((s) => s !== skill));
-  };
+  const handleRemoveSkill = (skill: Skill) => {};
 
   return (
     <div className="flex flex-col gap-4">
@@ -37,10 +55,10 @@ const Skills = () => {
         {skills.map((skill) => {
           return (
             <div
-              key={skill}
+              key={String(skill.id)}
               className="border-2 border-primary px-2 py-1 rounded-md flex items-center gap-1"
             >
-              <Label>{skill}</Label>
+              <Label>{skill.name}</Label>
               <X
                 size={"1rem"}
                 className="hover:opacity-50 cursor-pointer"
@@ -57,7 +75,7 @@ const Skills = () => {
           onChange={(e) => setInput(e.target.value)}
           className="border-primary"
         />
-        <Button onClick={() => addSkill()} className="cursor-pointer">
+        <Button onClick={() => handleAddSkill()} className="cursor-pointer">
           Add Skill
         </Button>
       </div>

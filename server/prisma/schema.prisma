@@ -23,3 +23,34 @@ model Resume {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+
+model Skill {
+  id          String            @id @default(uuid())
+  name        String            @unique
+  experiences ExperienceSkill[]
+}
+
+model Experience {
+  id          String            @id @default(uuid())
+  type        ExperienceType
+  name        String
+  description String
+  skills      ExperienceSkill[]
+}
+
+model ExperienceSkill {
+  experienceId String
+  skillId      String
+
+  experience Experience @relation(fields: [experienceId], references: [id])
+  skill      Skill      @relation(fields: [skillId], references: [id])
+
+  @@id([experienceId, skillId])
+}
+
+enum ExperienceType {
+  JOB
+  PROJECT
+  VOLUNTEER
+  OTHER
+}
