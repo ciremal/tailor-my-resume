@@ -7,7 +7,7 @@ import { Skill } from "@/lib/types";
 import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { addSkill, fetchSkills } from "@/app/services/skills";
+import { addSkill, deleteSkill, fetchSkills } from "@/app/services/skills";
 
 const Skills = () => {
   const [skills, setSkills] = useState<Skill[]>([]);
@@ -47,7 +47,18 @@ const Skills = () => {
     }
   };
 
-  const handleRemoveSkill = (skill: Skill) => {};
+  const handleRemoveSkill = async (skill: Skill) => {
+    try {
+      if (!skill.id) {
+        return;
+      }
+      await deleteSkill(String(skill.id));
+      setSkills((prev) => prev.filter((s) => s.id !== skill.id));
+    } catch (error) {
+      console.error(error);
+      toast.error("Could not remove skill");
+    }
+  };
 
   return (
     <div className="flex flex-col gap-4">

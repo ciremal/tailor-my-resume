@@ -42,8 +42,8 @@ model ExperienceSkill {
   experienceId String
   skillId      String
 
-  experience Experience @relation(fields: [experienceId], references: [id])
-  skill      Skill      @relation(fields: [skillId], references: [id])
+  experience Experience @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+  skill      Skill      @relation(fields: [skillId], references: [id], onDelete: Cascade)
 
   @@id([experienceId, skillId])
 }

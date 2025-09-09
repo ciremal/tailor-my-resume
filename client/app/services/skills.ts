@@ -17,3 +17,12 @@ export async function addSkill(skill: string) {
   if (!res.ok) throw new Error("Failed to add skill");
   return res.json();
 }
+
+export async function deleteSkill(id: string) {
+  const res = await fetch(`${API_BASE}/${id}`, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+  });
+  if (!res.ok) throw new Error("Failed to delete skill");
+  return res.json();
+}
