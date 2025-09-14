@@ -52,7 +52,7 @@ const Skills = () => {
       if (!skill.id) {
         return;
       }
-      await deleteSkill(String(skill.id));
+      await deleteSkill(skill.id);
       setSkills((prev) => prev.filter((s) => s.id !== skill.id));
     } catch (error) {
       console.error(error);
@@ -66,7 +66,7 @@ const Skills = () => {
         {skills.map((skill) => {
           return (
             <div
-              key={String(skill.id)}
+              key={skill.id}
               className="border-2 border-primary px-2 py-1 rounded-md flex items-center gap-1"
             >
               <Label>{skill.name}</Label>

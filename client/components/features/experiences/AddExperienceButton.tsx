@@ -2,11 +2,9 @@
 
 import { fetchSkills } from "@/app/services/skills";
 import { Button } from "@/components/ui/button";
-import { Combobox } from "@/components/ui/combobox";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -24,6 +22,8 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Skill } from "@/lib/types";
 import { useEffect, useState } from "react";
+import { SkillSelect } from "./SkillSelect";
+import { X } from "lucide-react";
 
 export const AddExperienceButton = () => {
   const [type, setType] = useState<string>("");
@@ -53,6 +53,17 @@ export const AddExperienceButton = () => {
     };
     fetchData();
   }, []);
+
+  const handleSetSkills = (skill: string) => {
+    if (skills.find((s) => s === skill)) {
+      return;
+    }
+    setSkills((prev) => [...prev, skill]);
+  };
+
+  const handleRemoveSkill = (skill: string) => {
+    setSkills((prev) => prev.filter((s) => s !== skill));
+  };
 
   return (
     <Dialog>
@@ -114,12 +125,29 @@ export const AddExperienceButton = () => {
                 </div>
                 <div className="flex flex-col gap-2 w-full">
                   <Label htmlFor="descriptionInput">Related skills</Label>
-                  <Combobox
-                    assignValue={false}
+                  <div className="flex gap-2">
+                    {skills.map((skill) => {
+                      return (
+                        <div
+                          key={skill}
+                          className="border border-primary px-2 py-1 rounded-md flex items-center gap-1"
+                        >
+                          <Label>{skill}</Label>
+                          <X
+                            size={"1rem"}
+                            className="hover:opacity-50 cursor-pointer"
+                            onClick={() => handleRemoveSkill(skill)}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <SkillSelect
                     options={skillOptions.map((s) => ({
                       value: s.name,
                       label: s.name,
                     }))}
+                    handleSetSkills={handleSetSkills}
                   />
                 </div>
               </>
