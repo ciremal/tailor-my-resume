@@ -51,3 +51,17 @@ export const addExperience = async (req: Request, res: Response) => {
     res.status(500).json({ error: error });
   }
 };
+
+export const deleteExperience = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const result = await prisma.experience.delete({
+      where: {
+        id: id!,
+      },
+    });
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(500).json({ error: error });
+  }
+};
