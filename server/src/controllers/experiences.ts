@@ -26,7 +26,7 @@ export const addExperience = async (req: Request, res: Response) => {
 
     const newExperience = await prisma.experience.create({
       data: {
-        type,
+        type: type.toUpperCase(),
         name,
         description,
         skills: {

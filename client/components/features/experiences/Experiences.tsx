@@ -23,6 +23,7 @@ const Experiences = () => {
     fetchData();
   }, []);
 
+  console.log(experiences);
   return (
     <div className="border border-primary px-5 py-2 flex flex-col gap-4">
       <h3 className="text-2xl font-semibold">Experiences</h3>
@@ -36,7 +37,7 @@ const Experiences = () => {
           </div>
         );
       })}
-      <AddExperienceButton />
+      <AddExperienceButton setExperiences={setExperiences} />
     </div>
   );
 };

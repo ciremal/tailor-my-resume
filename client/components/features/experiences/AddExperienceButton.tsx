@@ -20,18 +20,43 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Skill } from "@/lib/types";
-import { useEffect, useState } from "react";
-import { SkillSelect } from "./SkillSelect";
-import { X } from "lucide-react";
+import { Dispatch, SetStateAction, useEffect, useState } from "react";
+import { ChevronsUpDown, X } from "lucide-react";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import { addExperience } from "@/app/services/experiences";
+import { Experience } from "@/lib/types";
 
-export const AddExperienceButton = () => {
-  const [type, setType] = useState<string>("");
-  const [name, setName] = useState<string>("");
-  const [description, setDescription] = useState<string>("");
-  const [skills, setSkills] = useState<string[]>([]);
-
-  const [skillOptions, setSkillOptions] = useState<Skill[]>([]);
+export const AddExperienceButton = ({
+  setExperiences,
+}: {
+  setExperiences: Dispatch<SetStateAction<Experience[]>>;
+}) => {
+  const [skillOptions, setSkillOptions] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -46,7 +71,14 @@ export const AddExperienceButton = () => {
           }
           return 0;
         });
-        setSkillOptions(data);
+        setSkillOptions(
+          data.map((skill: any) => {
+            return {
+              label: skill.name,
+              value: skill.name,
+            };
+          })
+        );
       } catch (error) {
         console.error(error);
       }
@@ -54,107 +86,215 @@ export const AddExperienceButton = () => {
     fetchData();
   }, []);
 
-  const handleSetSkills = (skill: string) => {
-    if (skills.find((s) => s === skill)) {
-      return;
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    try {
+      const { type, name, description, skills } = values;
+
+      const result = await addExperience(type, name, description, skills);
+      setExperiences((prev) => [...prev, result]);
+      toast.success("Successfully added new experience.");
+      form.reset();
+    } catch (error) {
+      console.error(error);
+      toast.error("Error occured with adding a new experience.");
     }
-    setSkills((prev) => [...prev, skill]);
   };
 
-  const handleRemoveSkill = (skill: string) => {
-    setSkills((prev) => prev.filter((s) => s !== skill));
-  };
+  const formSchema = z.object({
+    type: z.string().nonempty({
+      message: "Select the type of experience.",
+    }),
+    name: z
+      .string()
+      .min(3, {
+        message: "Name must be longer than 3 characters.",
+      })
+      .nonempty({ message: "Required field." }),
+    description: z
+      .string()
+      .min(10, {
+        message: "Description must be longer than 10 characters",
+      })
+      .nonempty({ message: "Required field." }),
+    skills: z.array(z.string()),
+  });
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      type: "",
+      name: "",
+      description: "",
+      skills: [],
+    },
+  });
 
   return (
     <Dialog>
-      <form>
-        <DialogTrigger asChild>
-          <Button>Add Experience</Button>
-        </DialogTrigger>
-        <DialogContent
-          onCloseAutoFocus={() => {
-            setType("");
-            setName("");
-            setDescription("");
-            setSkills([]);
-          }}
-        >
-          <DialogHeader>
-            <DialogTitle>Add Experience</DialogTitle>
-          </DialogHeader>
+      <DialogTrigger asChild>
+        <Button>Add Experience</Button>
+      </DialogTrigger>
+      <DialogContent
+        onCloseAutoFocus={() => {
+          form.reset();
+        }}
+      >
+        <DialogHeader>
+          <DialogTitle>Add Experience</DialogTitle>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)}>
+            <FormField
+              control={form.control}
+              name="type"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Type</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="w-full" id="typeInput">
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="job">Job</SelectItem>
+                      <SelectItem value="project">Project</SelectItem>
+                      <SelectItem value="volunteer">Volunteer</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-          <div className="flex flex-col gap-5">
-            <div className="flex flex-col gap-2 w-full">
-              <Label htmlFor="typeInput">Type</Label>
-              <Select value={type} onValueChange={(value) => setType(value)}>
-                <SelectTrigger className="w-full" id="typeInput">
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="job">Job</SelectItem>
-                  <SelectItem value="project">Project</SelectItem>
-                  <SelectItem value="volunteer">Volunteer</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Name of this experience</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Company ABC..." {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-            {type && (
-              <>
-                <div className="flex flex-col gap-2 w-full">
-                  <Label htmlFor="nameInput">
-                    Name of the {type} experience
-                  </Label>
-                  <Input
-                    id="nameInput"
-                    placeholder="Company ABC..."
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                  />
-                </div>
-                <div className="flex flex-col gap-2 w-full">
-                  <Label htmlFor="descriptionInput">
-                    Description of the experience
-                  </Label>
-                  <Textarea
-                    id="descriptionInput"
-                    placeholder="Integrated XYZ using ABC..."
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                  />
-                </div>
-                <div className="flex flex-col gap-2 w-full">
-                  <Label htmlFor="descriptionInput">Related skills</Label>
-                  <div className="flex gap-2">
-                    {skills.map((skill) => {
-                      return (
-                        <div
-                          key={skill}
-                          className="border border-primary px-2 py-1 rounded-md flex items-center gap-1"
-                        >
-                          <Label>{skill}</Label>
-                          <X
-                            size={"1rem"}
-                            className="hover:opacity-50 cursor-pointer"
-                            onClick={() => handleRemoveSkill(skill)}
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Integrated XYZ using ABC..."
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="skills"
+              render={({ field }) => {
+                const selectedSkills = form.watch("skills");
+
+                return (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Related Skills</FormLabel>
+                    <div className="flex gap-2">
+                      {selectedSkills.map((skill) => {
+                        return (
+                          <div
+                            key={skill}
+                            className="border border-primary px-2 py-1 rounded-md flex items-center gap-1"
+                          >
+                            <Label>{skill}</Label>
+                            <X
+                              size={"1rem"}
+                              className="hover:opacity-50 cursor-pointer"
+                              onClick={() => {
+                                const newSkills = selectedSkills.filter(
+                                  (s) => s !== skill
+                                );
+                                form.setValue("skills", newSkills);
+                              }}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            className={cn(
+                              "w-[200px] justify-between",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            Select Skill
+                            <ChevronsUpDown className="opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[200px] p-0">
+                        <Command>
+                          <CommandInput
+                            placeholder="Search framework..."
+                            className="h-9"
                           />
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <SkillSelect
-                    options={skillOptions.map((s) => ({
-                      value: s.name,
-                      label: s.name,
-                    }))}
-                    handleSetSkills={handleSetSkills}
-                  />
-                </div>
-              </>
-            )}
-          </div>
-        </DialogContent>
-      </form>
+                          <CommandList>
+                            <CommandEmpty>No framework found.</CommandEmpty>
+                            <CommandGroup>
+                              {skillOptions.map((skill: any) => (
+                                <CommandItem
+                                  value={skill.label}
+                                  key={skill.value}
+                                  onSelect={() => {
+                                    if (
+                                      !selectedSkills.find(
+                                        (s) => s === skill.value
+                                      )
+                                    ) {
+                                      form.setValue("skills", [
+                                        ...selectedSkills,
+                                        skill.value,
+                                      ]);
+                                    }
+                                  }}
+                                >
+                                  {skill.label}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
+            />
+
+            <DialogFooter>
+              <Button type="submit">Add Experience</Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
     </Dialog>
   );
 };

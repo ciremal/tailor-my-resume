@@ -62,7 +62,7 @@ const Skills = () => {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex gap-4 border border-primary px-6 py-4">
+      <div className="flex flex-wrap gap-4 border border-primary px-6 py-4">
         {skills.map((skill) => {
           return (
             <div
