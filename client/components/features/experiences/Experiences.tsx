@@ -1,11 +1,14 @@
 "use client";
 
-import { fetchExperiences } from "@/app/services/experiences";
+import { deleteExperience, fetchExperiences } from "@/app/services/experiences";
 import { Experience } from "@/lib/types";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { AddExperienceButton } from "./AddExperienceButton";
 import { Label } from "@radix-ui/react-dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { Edit, Trash } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export interface Experiences extends Experience {
   selected: boolean;
@@ -41,9 +44,37 @@ const Experiences = () => {
     );
   };
 
+  const handleDeleteExperience = async (id: string) => {
+    try {
+      await deleteExperience(id);
+      setExperiences((prev) => prev.filter((exp) => exp.id !== id));
+      toast.success("Successfully deleted item");
+    } catch (error) {
+      console.error(error);
+      toast.error("An error occured trying to delete this item.");
+    }
+  };
+
+  const selectedExperiences = experiences.filter((exp) => exp.selected);
+
   return (
     <div className="flex flex-col gap-4">
-      <h3 className="text-2xl font-semibold">Experiences</h3>
+      <div className="flex justify-between">
+        <h3 className="text-2xl font-semibold">Experiences</h3>
+        <button
+          disabled={selectedExperiences.length === 0}
+          className={cn(
+            "border-2 px-4 py-1 rounded-md transition-all duration-200",
+            "disabled:border-red-300 disabled:text-red-300",
+            selectedExperiences.length > 0
+              ? "border-red-600 text-red-600 hover:bg-red-600 hover:text-white cursor-pointer"
+              : "border-red-300 text-red-300"
+          )}
+          onClick={() => console.log("Clicked")}
+        >
+          <Trash size={20} />
+        </button>
+      </div>
       <div className="flex flex-col">
         {experiences.map((experience) => {
           return (
@@ -73,6 +104,29 @@ const Experiences = () => {
                       <Label className="text-sm">{skill.name}</Label>
                     </div>
                   ))}
+                </div>
+                <div className="flex justify-end">
+                  <div className="flex justify-between gap-2">
+                    <Button
+                      size={"icon"}
+                      className="hover:bg-secondary hover:text-white transition-all duration-200"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                      }}
+                    >
+                      <Edit />
+                    </Button>
+                    <Button
+                      size={"icon"}
+                      className="hover:bg-red-600 hover:text-white transition-all duration-200"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteExperience(experience.id);
+                      }}
+                    >
+                      <Trash />
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>

@@ -25,3 +25,12 @@ export async function addExperience(
   if (!res.ok) throw new Error("Failed to create new experience");
   return res.json();
 }
+
+export async function deleteExperience(id: string) {
+  const res = await fetch(`${API_BASE}/${id}/`, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+  });
+  if (!res.ok) throw new Error("Failed to delete experience");
+  return res.json();
+}
