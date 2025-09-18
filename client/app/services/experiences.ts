@@ -34,3 +34,15 @@ export async function deleteExperience(id: string) {
   if (!res.ok) throw new Error("Failed to delete experience");
   return res.json();
 }
+
+export async function deleteExperienceBulk(ids: string[]) {
+  const res = await fetch(`${API_BASE}/`, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      ids,
+    }),
+  });
+  if (!res.ok) throw new Error("Failed to delete experience(s)");
+  return res.json();
+}

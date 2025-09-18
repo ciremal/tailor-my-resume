@@ -1,6 +1,10 @@
 "use client";
 
-import { deleteExperience, fetchExperiences } from "@/app/services/experiences";
+import {
+  deleteExperience,
+  deleteExperienceBulk,
+  fetchExperiences,
+} from "@/app/services/experiences";
 import { Experience } from "@/lib/types";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -51,7 +55,19 @@ const Experiences = () => {
       toast.success("Successfully deleted item");
     } catch (error) {
       console.error(error);
-      toast.error("An error occured trying to delete this item.");
+      toast.error("An error occured trying to delete this experience");
+    }
+  };
+
+  const handleDeleteExperienceBulk = async (experiences: Experiences[]) => {
+    try {
+      const ids = experiences.map((exp) => exp.id);
+      await deleteExperienceBulk(ids);
+      setExperiences((prev) => prev.filter((exp) => !ids.includes(exp.id)));
+      toast.success("Successfully deleted experiences");
+    } catch (error) {
+      console.error(error);
+      toast.error("An error occured trying to delete the experience(s)");
     }
   };
 
@@ -70,7 +86,7 @@ const Experiences = () => {
               ? "border-red-600 text-red-600 hover:bg-red-600 hover:text-white cursor-pointer"
               : "border-red-300 text-red-300"
           )}
-          onClick={() => console.log("Clicked")}
+          onClick={() => handleDeleteExperienceBulk(selectedExperiences)}
         >
           <Trash size={20} />
         </button>
