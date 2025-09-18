@@ -49,12 +49,12 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { addExperience } from "@/app/services/experiences";
-import { Experience } from "@/lib/types";
+import { Experiences } from "./Experiences";
 
 export const AddExperienceButton = ({
   setExperiences,
 }: {
-  setExperiences: Dispatch<SetStateAction<Experience[]>>;
+  setExperiences: Dispatch<SetStateAction<Experiences[]>>;
 }) => {
   const [skillOptions, setSkillOptions] = useState([]);
 

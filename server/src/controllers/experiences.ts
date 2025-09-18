@@ -10,7 +10,15 @@ export const getExperiences = async (_req: Request, res: Response) => {
         },
       },
     });
-    res.status(200).json(result);
+    const simplifiedResult = result.map((experience) => ({
+      ...experience,
+      skills: experience.skills.map((s) => ({
+        id: s.skill.id,
+        name: s.skill.name,
+      })),
+    }));
+
+    res.status(200).json(simplifiedResult);
   } catch (error) {
     res.status(500).json({ error: error });
   }
