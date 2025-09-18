@@ -143,7 +143,10 @@ export const AddExperienceButton = ({
           <DialogTitle>Add Experience</DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="flex flex-col gap-4"
+          >
             <FormField
               control={form.control}
               name="type"
@@ -209,9 +212,9 @@ export const AddExperienceButton = ({
                 const selectedSkills = form.watch("skills");
 
                 return (
-                  <FormItem className="flex flex-col">
+                  <FormItem>
                     <FormLabel>Related Skills</FormLabel>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                       {selectedSkills.map((skill) => {
                         return (
                           <div
