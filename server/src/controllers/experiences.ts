@@ -38,11 +38,10 @@ export const addExperience = async (req: Request, res: Response) => {
         name,
         description,
         skills: {
-          create: skills.map((skillName: string) => ({
+          create: skills.map((skillId: string) => ({
             skill: {
-              connectOrCreate: {
-                where: { name: skillName.toLowerCase() },
-                create: { name: skillName.toLowerCase() },
+              connect: {
+                id: skillId,
               },
             },
           })),
@@ -104,6 +103,52 @@ export const deleteMultipleExperiences = async (
       .status(200)
       .json({ message: `Deleted ${result.count} experience(s) successfully` });
   } catch (error) {
+    res.status(500).json({ error: error });
+  }
+};
+
+export const editExperience = async (req: Request, res: Response) => {
+  try {
+    const { type, name, description, skills } = req.body;
+    const { id } = req.params;
+
+    const result = await prisma.experience.update({
+      where: { id: id! },
+      data: {
+        type: type.toUpperCase(),
+        name,
+        description,
+        skills: {
+          deleteMany: {},
+          create: skills.map((skillId: string) => ({
+            skill: {
+              connect: {
+                id: skillId,
+              },
+            },
+          })),
+        },
+      },
+      include: {
+        skills: {
+          include: {
+            skill: true,
+          },
+        },
+      },
+    });
+
+    const updatedExperience = {
+      ...result,
+      skills: result.skills.map((s) => ({
+        id: s.skill.id,
+        name: s.skill.name,
+      })),
+    };
+
+    res.status(200).json(updatedExperience);
+  } catch (error) {
+    console.log(error);
     res.status(500).json({ error: error });
   }
 };

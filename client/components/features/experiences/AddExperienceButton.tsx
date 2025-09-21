@@ -75,7 +75,7 @@ export const AddExperienceButton = ({
           data.map((skill: any) => {
             return {
               label: skill.name,
-              value: skill.name,
+              value: skill.id,
             };
           })
         );
@@ -89,8 +89,9 @@ export const AddExperienceButton = ({
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       const { type, name, description, skills } = values;
+      const skillIds = skills.map((skill) => skill.value);
 
-      const result = await addExperience(type, name, description, skills);
+      const result = await addExperience(type, name, description, skillIds);
       setExperiences((prev) => [...prev, result]);
       toast.success("Successfully added new experience.");
       form.reset();
@@ -116,7 +117,12 @@ export const AddExperienceButton = ({
         message: "Description must be longer than 10 characters",
       })
       .nonempty({ message: "Required field." }),
-    skills: z.array(z.string()),
+    skills: z.array(
+      z.object({
+        label: z.string(),
+        value: z.string(),
+      })
+    ),
   });
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -218,16 +224,16 @@ export const AddExperienceButton = ({
                       {selectedSkills.map((skill) => {
                         return (
                           <div
-                            key={skill}
+                            key={skill.value}
                             className="border border-primary px-2 py-1 rounded-md flex items-center gap-1"
                           >
-                            <Label>{skill}</Label>
+                            <Label>{skill.label}</Label>
                             <X
                               size={"1rem"}
                               className="hover:opacity-50 cursor-pointer"
                               onClick={() => {
                                 const newSkills = selectedSkills.filter(
-                                  (s) => s !== skill
+                                  (s) => s.value !== skill.value
                                 );
                                 form.setValue("skills", newSkills);
                               }}
@@ -255,11 +261,11 @@ export const AddExperienceButton = ({
                       <PopoverContent className="w-[200px] p-0">
                         <Command>
                           <CommandInput
-                            placeholder="Search framework..."
+                            placeholder="Search skill..."
                             className="h-9"
                           />
                           <CommandList>
-                            <CommandEmpty>No framework found.</CommandEmpty>
+                            <CommandEmpty>No skill found.</CommandEmpty>
                             <CommandGroup>
                               {skillOptions.map((skill: any) => (
                                 <CommandItem
@@ -268,12 +274,15 @@ export const AddExperienceButton = ({
                                   onSelect={() => {
                                     if (
                                       !selectedSkills.find(
-                                        (s) => s === skill.value
+                                        (s) => s.value === skill.value
                                       )
                                     ) {
                                       form.setValue("skills", [
                                         ...selectedSkills,
-                                        skill.value,
+                                        {
+                                          label: skill.label,
+                                          value: skill.value,
+                                        },
                                       ]);
                                     }
                                   }}
