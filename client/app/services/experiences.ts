@@ -46,3 +46,24 @@ export async function deleteExperienceBulk(ids: string[]) {
   if (!res.ok) throw new Error("Failed to delete experience(s)");
   return res.json();
 }
+
+export async function editExperience(
+  type: string,
+  name: string,
+  description: string,
+  skills: string[],
+  id: string
+) {
+  const res = await fetch(`${API_BASE}/${id}/`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      type,
+      name,
+      description,
+      skills,
+    }),
+  });
+  if (!res.ok) throw new Error("Failed to update experience");
+  return res.json();
+}

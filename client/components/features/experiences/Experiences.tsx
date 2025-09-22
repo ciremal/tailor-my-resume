@@ -8,7 +8,7 @@ import {
 import { Experience } from "@/lib/types";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { AddExperienceButton } from "./AddExperienceButton";
+import { AddExperienceDialog } from "./AddExperienceDialog";
 import { Label } from "@radix-ui/react-dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Edit, Trash } from "lucide-react";
@@ -20,6 +20,8 @@ export interface Experiences extends Experience {
 
 const Experiences = () => {
   const [experiences, setExperiences] = useState<Experiences[]>([]);
+  const [open, setOpen] = useState(false);
+  const [selectedExperience, setSelectedExperience] = useState<Experience>();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -128,6 +130,8 @@ const Experiences = () => {
                       className="hover:bg-secondary hover:text-white transition-all duration-200"
                       onClick={(e) => {
                         e.stopPropagation();
+                        setOpen(true);
+                        setSelectedExperience(experience);
                       }}
                     >
                       <Edit />
@@ -149,7 +153,13 @@ const Experiences = () => {
           );
         })}
       </div>
-      <AddExperienceButton setExperiences={setExperiences} />
+      <AddExperienceDialog
+        open={open}
+        setOpen={setOpen}
+        setExperiences={setExperiences}
+        experience={selectedExperience}
+        setSelectedExperience={setSelectedExperience}
+      />
     </div>
   );
 };

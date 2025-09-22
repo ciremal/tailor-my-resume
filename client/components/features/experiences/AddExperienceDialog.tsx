@@ -48,14 +48,25 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { addExperience } from "@/app/services/experiences";
+import { addExperience, editExperience } from "@/app/services/experiences";
 import { Experiences } from "./Experiences";
+import { Experience } from "@/lib/types";
 
-export const AddExperienceButton = ({
-  setExperiences,
-}: {
+interface AddExperienceDialogProps {
+  open: boolean;
+  setOpen: Dispatch<SetStateAction<boolean>>;
   setExperiences: Dispatch<SetStateAction<Experiences[]>>;
-}) => {
+  experience?: Experience;
+  setSelectedExperience: Dispatch<SetStateAction<Experience | undefined>>;
+}
+
+export const AddExperienceDialog = ({
+  open,
+  setOpen,
+  setExperiences,
+  experience,
+  setSelectedExperience,
+}: AddExperienceDialogProps) => {
   const [skillOptions, setSkillOptions] = useState([]);
 
   useEffect(() => {
@@ -85,21 +96,6 @@ export const AddExperienceButton = ({
     };
     fetchData();
   }, []);
-
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    try {
-      const { type, name, description, skills } = values;
-      const skillIds = skills.map((skill) => skill.value);
-
-      const result = await addExperience(type, name, description, skillIds);
-      setExperiences((prev) => [...prev, result]);
-      toast.success("Successfully added new experience.");
-      form.reset();
-    } catch (error) {
-      console.error(error);
-      toast.error("Error occured with adding a new experience.");
-    }
-  };
 
   const formSchema = z.object({
     type: z.string().nonempty({
@@ -135,14 +131,67 @@ export const AddExperienceButton = ({
     },
   });
 
+  useEffect(() => {
+    if (experience) {
+      form.reset({
+        type: experience.type,
+        name: experience.name,
+        description: experience.description,
+        skills: experience.skills.map((s) => ({
+          label: s.name,
+          value: s.id,
+        })),
+      });
+    } else {
+      form.reset({
+        type: "",
+        name: "",
+        description: "",
+        skills: [],
+      });
+    }
+  }, [form, experience, open]);
+
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    try {
+      const { type, name, description, skills } = values;
+      const skillIds = skills.map((skill) => skill.value);
+
+      if (experience) {
+        const result = await editExperience(
+          type,
+          name,
+          description,
+          skillIds,
+          experience.id
+        );
+        setExperiences((prev) =>
+          prev.map((exp) => (exp.id === experience.id ? result : exp))
+        );
+        toast.success("Experience updated!");
+      } else {
+        const result = await addExperience(type, name, description, skillIds);
+        setExperiences((prev) => [...prev, result]);
+        toast.success("New experience added!");
+      }
+
+      setOpen(false);
+      form.reset();
+    } catch (error) {
+      console.error(error);
+      toast.error("Error occured with adding a new experience.");
+    }
+  };
+
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={() => setOpen(!open)}>
       <DialogTrigger asChild>
         <Button>Add Experience</Button>
       </DialogTrigger>
       <DialogContent
         onCloseAutoFocus={() => {
           form.reset();
+          setSelectedExperience(undefined);
         }}
       >
         <DialogHeader>
@@ -161,7 +210,7 @@ export const AddExperienceButton = ({
                   <FormLabel>Type</FormLabel>
                   <Select
                     onValueChange={field.onChange}
-                    defaultValue={field.value}
+                    defaultValue={field.value.toLowerCase()}
                   >
                     <FormControl>
                       <SelectTrigger className="w-full" id="typeInput">
@@ -302,7 +351,9 @@ export const AddExperienceButton = ({
             />
 
             <DialogFooter>
-              <Button type="submit">Add Experience</Button>
+              <Button type="submit">
+                {experience ? "Edit Experience" : "Add Experience"}
+              </Button>
             </DialogFooter>
           </form>
         </Form>
